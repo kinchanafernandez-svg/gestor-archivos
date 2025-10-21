@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  user-service:
+    build:
+      context: .
+      dockerfile: services/user-service/Dockerfile
+      target: development
+    volumes:
+      - ./services/user-service/src:/app/services/user-service/src
+      - ./shared:/app/shared
+    command: npm run dev
+
+  file-service:
+    build:
+      context: .
+      dockerfile: services/file-service/Dockerfile
+      target: development
+    volumes:
+      - ./services/file-service/src:/app/services/file-service/src
+      - ./shared:/app/shared
+    command: npm run dev
+
+  auditor-service:
+    build:
+      context: .
+      dockerfile: services/auditor-service/Dockerfile
+      target: development
+    volumes:
+      - ./services/auditor-service/src:/app/services/auditor-service/src
+      - ./shared:/app/shared
+    command: npm run dev
+
+  node-service:
+    build:
+      context: .
+      dockerfile: services/node-service/Dockerfile
+      target: development
+    volumes:
+      - ./services/node-service/src:/app/services/node-service/src
+      - ./shared:/app/shared
+    command: npm run dev
+
+  security-service:
+    build:
+      context: .
+      dockerfile: services/security-service/Dockerfile
+      target: development
+    volumes:
+      - ./services/security-service/src:/app/services/security-service/src
+      - ./shared:/app/shared
+    command: npm run dev
+
+  loadbalancer-service:
+    build:
+      context: .
+      dockerfile: services/loadbalancer-service/Dockerfile
+      target: development
+    volumes:
+      - ./services/loadbalancer-service/src:/app/services/loadbalancer-service/src
+      - ./shared:/app/shared
+    command: npm run dev

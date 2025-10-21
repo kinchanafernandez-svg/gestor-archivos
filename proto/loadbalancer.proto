@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package loadbalancer;
+
+service LoadBalancerService {
+  rpc RouteRequest(RouteRequestRequest) returns (RouteRequestResponse);
+  rpc GetNodeHealth(GetNodeHealthRequest) returns (GetNodeHealthResponse);
+  rpc UpdateNodeWeight(UpdateNodeWeightRequest) returns (UpdateNodeWeightResponse);
+}
+
+message RouteRequestRequest {
+  string service_type = 1;
+  string request_id = 2;
+}
+
+message RouteRequestResponse {
+  string node_id = 1;
+  string address = 2;
+  int32 port = 3;
+  bool success = 4;
+}
+
+message GetNodeHealthRequest {
+  string service_type = 1;
+}
+
+message GetNodeHealthResponse {
+  repeated NodeHealth nodes = 1;
+}
+
+message NodeHealth {
+  string node_id = 1;
+  string address = 2;
+  int32 port = 3;
+  double health_score = 4;
+  int32 active_connections = 5;
+}
+
+message UpdateNodeWeightRequest {
+  string node_id = 1;
+  double weight = 2;
+}
+
+message UpdateNodeWeightResponse {
+  bool success = 1;
+  string message = 2;
+}

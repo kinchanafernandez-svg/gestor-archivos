@@ -1,0 +1,153 @@
+version: '3.8'
+
+services:
+  # Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: distributed-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-distributed_system}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres123}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - distributed-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    container_name: distributed-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - distributed-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # User Service
+  user-service:
+    build:
+      context: .
+      dockerfile: services/user-service/Dockerfile
+    container_name: user-service
+    environment:
+      - NODE_ENV=production
+      - USER_SERVICE_PORT=50051
+      - JWT_SECRET=${JWT_SECRET}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "50051:50051"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - distributed-network
+    restart: unless-stopped
+
+  # File Service
+  file-service:
+    build:
+      context: .
+      dockerfile: services/file-service/Dockerfile
+    container_name: file-service
+    environment:
+      - NODE_ENV=production
+      - FILE_SERVICE_PORT=50052
+      - FILE_STORAGE_PATH=/data/files
+      - REPLICATION_FACTOR=${REPLICATION_FACTOR:-3}
+      - MAX_FILE_SIZE=${MAX_FILE_SIZE:-104857600}
+    ports:
+      - "50052:50052"
+    volumes:
+      - file_storage:/data/files
+    networks:
+      - distributed-network
+    restart: unless-stopped
+
+  # Auditor Service
+  auditor-service:
+    build:
+      context: .
+      dockerfile: services/auditor-service/Dockerfile
+    container_name: auditor-service
+    environment:
+      - NODE_ENV=production
+      - AUDITOR_SERVICE_PORT=50053
+    ports:
+      - "50053:50053"
+    networks:
+      - distributed-network
+    restart: unless-stopped
+
+  # Node Service
+  node-service:
+    build:
+      context: .
+      dockerfile: services/node-service/Dockerfile
+    container_name: node-service
+    environment:
+      - NODE_ENV=production
+      - NODE_SERVICE_PORT=50054
+      - HEARTBEAT_INTERVAL=${HEARTBEAT_INTERVAL:-5000}
+      - ELECTION_TIMEOUT=${ELECTION_TIMEOUT:-10000}
+    ports:
+      - "50054:50054"
+    networks:
+      - distributed-network
+    restart: unless-stopped
+
+  # Security Service
+  security-service:
+    build:
+      context: .
+      dockerfile: services/security-service/Dockerfile
+    container_name: security-service
+    environment:
+      - NODE_ENV=production
+      - SECURITY_SERVICE_PORT=50055
+      - JWT_SECRET=${JWT_SECRET}
+    ports:
+      - "50055:50055"
+    networks:
+      - distributed-network
+    restart: unless-stopped
+
+  # Load Balancer Service
+  loadbalancer-service:
+    build:
+      context: .
+      dockerfile: services/loadbalancer-service/Dockerfile
+    container_name: loadbalancer-service
+    environment:
+      - NODE_ENV=production
+      - LOADBALANCER_SERVICE_PORT=50056
+    ports:
+      - "50056:50056"
+    networks:
+      - distributed-network
+    restart: unless-stopped
+
+networks:
+  distributed-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  file_storage:

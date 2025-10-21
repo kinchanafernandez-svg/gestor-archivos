@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package node;
+
+service NodeService {
+  rpc RegisterNode(RegisterNodeRequest) returns (RegisterNodeResponse);
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  rpc GetNodeStatus(GetNodeStatusRequest) returns (GetNodeStatusResponse);
+  rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
+  rpc ElectLeader(ElectLeaderRequest) returns (ElectLeaderResponse);
+  rpc GetLeader(GetLeaderRequest) returns (GetLeaderResponse);
+}
+
+message RegisterNodeRequest {
+  string node_id = 1;
+  string node_type = 2;
+  string address = 3;
+  int32 port = 4;
+}
+
+message RegisterNodeResponse {
+  bool success = 1;
+  string message = 2;
+  string leader_id = 3;
+}
+
+message HeartbeatRequest {
+  string node_id = 1;
+  NodeMetrics metrics = 2;
+}
+
+message HeartbeatResponse {
+  bool success = 1;
+  string leader_id = 2;
+  repeated string active_nodes = 3;
+}
+
+message GetNodeStatusRequest {
+  string node_id = 1;
+}
+
+message GetNodeStatusResponse {
+  NodeInfo node = 1;
+  bool success = 2;
+}
+
+message ListNodesRequest {
+  string node_type = 1;
+  string status = 2;
+}
+
+message ListNodesResponse {
+  repeated NodeInfo nodes = 1;
+  int32 total = 2;
+}
+
+message NodeInfo {
+  string node_id = 1;
+  string node_type = 2;
+  string address = 3;
+  int32 port = 4;
+  string status = 5;
+  string last_heartbeat = 6;
+  NodeMetrics metrics = 7;
+}
+
+message NodeMetrics {
+  double cpu_usage = 1;
+  double memory_usage = 2;
+  int32 active_connections = 3;
+  int64 requests_per_minute = 4;
+}
+
+message ElectLeaderRequest {
+  string candidate_id = 1;
+  int64 term = 2;
+}
+
+message ElectLeaderResponse {
+  bool vote_granted = 1;
+  string current_leader = 2;
+  int64 term = 3;
+}
+
+message GetLeaderRequest {}
+
+message GetLeaderResponse {
+  string leader_id = 1;
+  int64 term = 2;
+  bool success = 3;
+}
